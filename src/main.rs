@@ -57,6 +57,10 @@ fn main() {
                 let selected = empires.remove(sel);
                 println!("{}", selected);
             }
+            println!();
+            println!("Done! Press enter to exit");
+            let mut input = String::new();
+            let _ = std::io::stdin().read_line(&mut input);
         }
         Err(e) => {
             eprintln!("user_empire_designs_v3.4.txt not found.");
