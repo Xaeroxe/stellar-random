@@ -2,9 +2,14 @@ use rand::seq::SliceRandom;
 use std::fs;
 
 fn main() {
-    match fs::read_to_string(
+    let base_dir = if cfg!(target_os = "linux") {
+        dirs::data_local_dir()
+    } else {
         dirs::document_dir()
-            .expect("Documents directory not found!")
+    };
+    match fs::read_to_string(
+        base_dir
+            .expect("Base directory not found!")
             .join("Paradox Interactive")
             .join("Stellaris")
             .join("user_empire_designs_v3.4.txt"),
