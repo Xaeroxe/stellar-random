@@ -1,0 +1,13 @@
+name: Pull Request or Push
+
+on: [push, pull_request]
+
+jobs:
+  fmt-build-lint-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: cargo fmt -- --check
+      - run: cargo clippy -- -D warnings
+      - run: cargo build
+      - run: cargo test

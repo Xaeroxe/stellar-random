@@ -1,4 +1,4 @@
-use rand::Rng;
+use rand::seq::SliceRandom;
 use std::fs;
 
 fn main() {
@@ -10,17 +10,32 @@ fn main() {
             .join("user_empire_designs_v3.4.txt"),
     ) {
         Ok(f) => {
-            let text_tape = jomini::TextTape::from_slice(f.as_bytes())
-                .expect("Failed to parse user_empire_designs_v3.4.txt. Is your file corrupt?");
+            let text_tape = match jomini::TextTape::from_slice(f.as_bytes()) {
+                Ok(v) => v,
+                Err(e) => {
+                    eprintln!("Failed to parse user_empire_designs_v3.4.txt. Is your file corrupt? {e:#?}");
+                    press_enter_to_continue();
+                    return;
+                }
+            };
             let mut empires = text_tape
                 .utf8_reader()
                 .fields()
                 .map(|f| f.0.read_str())
                 .collect::<Vec<_>>();
-            println!("Empire data found, {} eligible candidates:", empires.len());
+            let mut r = rand::thread_rng();
+            empires.shuffle(&mut r);
+            println!("Empire data found, {} total candidates.", empires.len());
             println!();
-            for empire in &empires {
-                println!("{}", empire);
+            println!("Data includes");
+            const PREVIEW_COUNT: usize = 3;
+            for empire in empires.iter().take(PREVIEW_COUNT) {
+                println!("  {}", empire);
+            }
+            if empires.len() > PREVIEW_COUNT {
+                let remaining = empires.len() - PREVIEW_COUNT;
+                println!();
+                println!("...and {remaining} other empires.");
             }
             let mut number_input = None;
             while number_input.is_none() {
@@ -29,7 +44,7 @@ fn main() {
                 let mut input = String::new();
                 if let Err(e) = std::io::stdin().read_line(&mut input) {
                     eprintln!("Failed to read line from stdin, shutting down.");
-                    eprintln!("{:?}", e);
+                    eprintln!("{e:#?}");
                     return;
                 }
                 let input = input.trim().to_string();
@@ -51,21 +66,29 @@ fn main() {
                 }
             }
             println!();
-            let mut r = rand::thread_rng();
-            for _ in 0..number_input.expect("infallible") {
-                let sel = r.gen_range(0..empires.len());
-                let selected = empires.remove(sel);
-                println!("{}", selected);
+            empires.shuffle(&mut r);
+            for (i, selected) in empires
+                .iter()
+                .take(number_input.expect("infallible"))
+                .enumerate()
+            {
+                println!("  {:02}:  {selected}", i + 1);
             }
             println!();
-            println!("Done! Press enter to exit");
-            let mut input = String::new();
-            let _ = std::io::stdin().read_line(&mut input);
+            println!("Done!");
+            press_enter_to_continue();
         }
         Err(e) => {
             eprintln!("user_empire_designs_v3.4.txt not found.");
             eprintln!("Please make a custom empire using Stellaris 3.4 or newer");
-            eprintln!("{:?}", e);
+            eprintln!("{e:#?}");
+            press_enter_to_continue();
         }
     }
+}
+
+fn press_enter_to_continue() {
+    println!("Press enter to exit.");
+    let mut input = String::new();
+    let _ = std::io::stdin().read_line(&mut input);
 }
